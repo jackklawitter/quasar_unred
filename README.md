@@ -6,6 +6,7 @@ Quasar Unred is a Python library for determining the E(B-V) value of observed qu
 
 pip install quasar_unred
 
+qso_template.txt must be downloaded and in working directory for load_template() to work with no argument.
 ## Usage
 
 A simple demonstration is shown in quasar_unred_demo.ipynb
