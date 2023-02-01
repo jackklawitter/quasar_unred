@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='quasar_unred',
-    version='0.3',
+    version='0.4',
     license='BSD3',
     author="John Klawitter",
     author_email='jackklawitter@gmail.com',
