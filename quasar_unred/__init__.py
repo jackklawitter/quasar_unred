@@ -1,1 +1,1 @@
-from quasar_unred import load_template, extinguish, fit_composite, find_ebv, mc_spec
+from .unred_module import *
