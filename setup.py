@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='quasar_unred',
-    version='0.5',
+    version='0.6',
     license='BSD3',
     author="John Klawitter",
     author_email='jackklawitter@gmail.com',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    packages=find_packages('quasar_unred'),
+    package_dir={'': 'quasar_unred'},
     url='https://github.com/jackklawitter/quasar_unred',
     keywords='Red Quasars',
     install_requires=[
