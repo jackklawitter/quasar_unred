@@ -8,6 +8,7 @@ from scipy.spatial.distance import euclidean
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.stats import sigma_clip
 import astropy.units as u
+from astropy.convolution import convolve, Box1DKernel
 
 from dust_extinction import shapes
 
@@ -176,7 +177,7 @@ def fit_composite(template_wavelength, template_flux, spectrum_wavelength, spect
     return srat
 
 #Given spectrum data, srat, and redshift returns E(B-V)
-def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_flux,  srat, z):
+def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_flux,  srat):
     """
     Finds the scaling factor between the template and the input spectrum
 
@@ -198,9 +199,6 @@ def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_f
     srat: float
         scaling ration determined in fit composite
 
-    z: float
-        redshift of observed quasar
-
 
     Returns
     -------
@@ -219,6 +217,12 @@ def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_f
     yInt: float
         y-intercept of spectrum
 
+    fitted_curve:
+        quasar template reddened by the best-fit E(B-V) 
+
+    adjusted_wave:
+        wavelength array corresponding to the fitted_curve
+    
     """
 
     #Remove nan's from the data
@@ -226,7 +230,6 @@ def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_f
     spectrum_wavelength = spectrum_wavelength[~np.isnan(spectrum_wavelength)]
     spectrum_wavelength= spectrum_wavelength[~np.isnan(spectrum_flux)]
     spectrum_flux = spectrum_flux[~np.isnan(spectrum_flux)]
-
 
 
     cMask = sigma_clip(spectrum_flux)
@@ -246,7 +249,7 @@ def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_f
             spectrum_flux = np.delete(spectrum_flux,i)
 
     #remove around emission lines
-    lines = [1216, 1550, 2800, 4861, 5000, 6563]
+    lines = [1216, 1550, 2800, 4861, 5000, 6563, 10830, 10941, 12820, 18756]
     for i in range(6):
         curLine = lines[i]
         l1 = curLine*0.96
@@ -299,7 +302,7 @@ def find_ebv(template_wavelength, template_flux, spectrum_wavelength, spectrum_f
 
 
 # perturb the best-fit model spectrum by the error array
-def mc_spec(temp_wave, temp_flux, err, obs_wave, obs_flux, srat, z, ntrials = 100):
+def mc_spec(temp_wave, temp_flux, obs_wave, obs_flux, obs_err, srat, ntrials = 1000):
     """
     Finds the uncertainty in measured E(B-V) using random sampling from error array
 
@@ -312,23 +315,20 @@ def mc_spec(temp_wave, temp_flux, err, obs_wave, obs_flux, srat, z, ntrials = 10
     temp_flux: np.array
         flux array of
 
-    err: np.array
-        error array of quasar template
-
     obs_wave: np.array
         wavelength array of observed quasar
 
     obs_flux: np.array
         flux array of observed quasar
 
+    obs_err: np.array
+        error array of quasar template
+
     srat: float
         scaling ratio determined in fit composite
 
-    z: float
-        redshift of observed quasar
-
     ntrials: int
-        Number of trials for error calculation. Defaults to 100
+        Number of trials for error calculation. Defaults to 1000
 
 
     Returns
@@ -339,18 +339,20 @@ def mc_spec(temp_wave, temp_flux, err, obs_wave, obs_flux, srat, z, ntrials = 10
 
     """
 
-
+    
     ebv_array_float = np.arange(ntrials,dtype=float)
     ebv_array_int = np.arange(ntrials,dtype=int)
 
+    flux_sm = convolve(obs_flux, Box1DKernel(29)) 
+    
     for loop in range(ntrials):
 
-        sig_modl = obs_wave.copy()
+        perturb_flux  = obs_flux.copy()
 
-        for ii in np.arange(obs_wave.size, dtype=int):
-            sig_modl[ii] = np.random.normal(obs_wave[ii], err[ii], 1)
+        for ii in np.arange(obs_flux.size, dtype=int):
+            perturb_flux[ii] = np.random.normal(flux_sm[ii], obs_err[ii])
         try:
-            output = find_ebv(temp_wave, temp_flux, sig_modl, obs_flux, srat, z)
+            output = find_ebv(temp_wave, temp_flux, obs_wave, perturb_flux, srat)
             ebv = output[0]
             yInt = output[3]
 

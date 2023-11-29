@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 [project]
 name = "quasar_unred"
 dependencies = ["numpy", "scipy", "astropy", "dust_extinction", "matplotlib"]
-version = "0.16"
+version = "0.18"
 authors = [
   { name="John Klawitter", email="jackklawitter@gmail.com" },
 ]
